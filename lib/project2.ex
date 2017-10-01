@@ -8,23 +8,69 @@ defmodule Project2 do
   genserver modules and the n number of actors running on that genserver
   @args numNodes topology algorithm
   numNodes: Nnmber of nodes the topology must contain
-  topology: FullNetwork, 2DGrid, Line, Imperfect2DGrid
+  topology: Line, 2DGrid,  Imperfect2DGrid, FullNetwork
   algorithm : gossip, push-sum
   """
   def main(args) do
     
+    #getting the commandline arguements
     numNodes=String.to_integer(Enum.at(args,0))
-    #IO.puts is_integer(numNodes)
-    
-    topology=(Enum.at(args,1))
-    #IO.puts is_binary(topology)
+    topology=(String.upcase(Enum.at(args,1)))
+    algorithm=(String.upcase(Enum.at(args,2)))
 
-    algorithm=(Enum.at(args,2))
-    #IO.puts is_binary(algorithm)
+    case topology do
+      "LINE" -> line(numNodes, algorithm, nil, 1)
+      "2DGRID" -> twoDGrid(numNodes, algorithm)
+      "IMPERFECT2DGRID" -> imperfect2DGrid(numNodes, algorithm)
+      "FULLNETWORK" -> fullNetwork(numNodes, algorithm)
+    end
 
-    IO.puts("Please run")
-    
-  
   end
+
+  #to be called when Line topology is requested
+  def line(numNodes, algorithm, left, nodeNo) when nodeNo<=numNodes do
+    """
+    IO.puts ("Line hai")
+    IO.puts (numNodes)
+    IO.puts (algorithm)
+    """
+    {:ok, current}=Project2.LineServer.start_link(nodeNo,algorithm)
+    Project2.LineServer.setLeft(current,left)
+    Project2.LineServer.setRight(left,current)
+    Project2.LineServer.printNode(left)
+    line(numNodes, algorithm,current,nodeNo+1)
+  end
+
+  def line(numNodes, algorithm, left, nodeNo) when nodeNo>numNodes do
+    Project2.LineServer.printNode(left)
+    unlimitedLoop    
+  end
+
+  #to be called when 2dGrid topology is requested
+  def twoDGrid(numNodes, algorithm) do
+    IO.puts ("2DGrid hai")
+    IO.puts (numNodes)
+    IO.puts (algorithm)
+  end
+
+  #to be called when Imperfect2DGrid topology is requested
+  def imperfect2DGrid(numNodes, algorithm) do
+    IO.puts ("Imperfect2DGrid hai")
+    IO.puts (numNodes)
+    IO.puts (algorithm)
+  end
+
+  #to be called when FullNetwork topology is requested
+  def fullNetwork(numNodes, algorithm) do
+    IO.puts ("FullNetwork hai")
+    IO.puts (numNodes)
+    IO.puts (algorithm)
+  end
+
+  #to keep the main thread running
+  def unlimitedLoop do
+    unlimitedLoop
+  end
+
 
 end
