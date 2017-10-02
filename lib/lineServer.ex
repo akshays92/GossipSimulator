@@ -31,22 +31,22 @@ defmodule Project2.LineServer do
 
     #set gossip for the target pid
     def setGossip(pid, gossip) do
-        GenServer.cast(pid, {:gossipSend, gossip})
+        GenServer.cast(pid, {:setGossip, gossip})
+    end
+
+    #receive gossip of this actor
+    def getGossip(pid) do
+        GenServer.call(pid, {:getGossip})
     end
 
     #printing this node
     def printNode(pid) do
         GenServer.cast(pid, {:printNode})
     end
-
-    #receive gossip of this actor
-    def getGossip(pid, gossip) do
-        GenServer.call(pid, {:gossipReceive, gossip})
-    end
-
     
-
+    
     #callback functions / p2p server side functions
+    #topology implementing functions
     def handle_cast({:setLeft, pid}, state) do
         state=Map.put(state,:left,pid)
         {:noreply, state}
@@ -62,13 +62,38 @@ defmodule Project2.LineServer do
     
     def handle_cast({:printNode}, state) do
         IO.inspect state
+        #IO.puts Integer.to_string(Map.get(state,:s)) <> ":  " 
+        #IO.inspect Map.get(state,:current) 
         {:noreply, state}
     end
 
     
+    #Gossip protocol implementing functions
+    def handle_cast({:setGossip, gossip}, state) do
+        state=Map.put(state,:count,Map.get(state,:count)+1)
+        state=Map.put(state,:gossip_string,gossip)
+        
+        pid=Map.get(state,Enum.random([:left, :right]))
+        if Map.get(state,:count) < Map.get(state,:maxCount) do
+            if is_pid(pid) do
+                GenServer.cast(pid, {:setGossip, Map.get(state,:gossip_string)})
+            end
+            setGossip(Map.get(state,:current),Map.get(state,:gossip_string))
+        else
+            printNode(Map.get(state,:current))
+        end
+        {:noreply, state}
+    end
 
+    def handle_call({:getGossip}, _from, state) do
+        {:reply, Map.get(state, :gossip_string), state}
+    end
 
-
-
+    def handle_cast({:spreadGossip}, state) do
+        list=[:left, :right]
+        gossip=Map.get(state,:gossip_string)
+        setGossip( Map.get(state,Enum.random(list)),gossip)
+        {:noreply,state}
+    end
 
 end
