@@ -2,9 +2,9 @@ defmodule Project2.LineServer do
     use GenServer
 
     #Genserver DEF functions    
-    def start_link(s, algorithm) do
+    def start_link(s) do
         #GenServer.start_link(__MODULE__,%{s: s, w: w, left: left, right: right}, name: :CoinServer
-        GenServer.start_link(__MODULE__,%{s: s, w: 1, left: nil, current: nil, right: nil, count: 0, gossip_string: "", maxCount: 10, algorithm: algorithm})
+        GenServer.start_link(__MODULE__,%{s: s, w: 1, left: nil, current: nil, right: nil, count: 0, gossip_string: "", maxCount: 100, convergence: false})
     end
 
     def init(init_data) do
@@ -29,19 +29,23 @@ defmodule Project2.LineServer do
         GenServer.cast(pid, {:setRight, right})
     end
 
-    #set gossip for the target pid
-    def setGossip(pid, gossip) do
-        GenServer.cast(pid, {:setGossip, gossip})
+    #spreading gossip for the target pid
+    def sendGossip(pid, gossip) do
+        GenServer.cast(pid, {:sendGossip, gossip})
     end
 
-    #receive gossip of this actor
-    def getGossip(pid) do
-        GenServer.call(pid, {:getGossip})
+    def receiveGossip(pid, gossip) do
+        GenServer.cast(pid, {:receiveGossip, gossip})
     end
 
     #printing this node
     def printNode(pid) do
         GenServer.cast(pid, {:printNode})
+    end
+
+    #Check if node is converged
+    def isConverged(pid) do
+        GenServer.call(pid, {:isConverged})
     end
     
     
@@ -67,33 +71,35 @@ defmodule Project2.LineServer do
         {:noreply, state}
     end
 
-    
-    #Gossip protocol implementing functions
-    def handle_cast({:setGossip, gossip}, state) do
+    #Gossip receiving function
+    def handle_cast({:receiveGossip, gossip}, state) do
+        if(Map.get(state,:count)<1) do
+            sendGossip(Map.get(state,:current),gossip)
+            IO.puts ("Bitch "<>Integer.to_string(Map.get(state,:s)) <> " is spreading gossip that "<>gossip)
+        end
         state=Map.put(state,:count,Map.get(state,:count)+1)
-        state=Map.put(state,:gossip_string,gossip)
-        
-        pid=Map.get(state,Enum.random([:left, :right]))
-        if Map.get(state,:count) < Map.get(state,:maxCount) do
+        state=Map.put(state,:gossip_string,gossip)            
+        {:noreply, state}
+    end
+    
+    #Gossip sending function
+    def handle_cast({:sendGossip, gossip}, state) do
+        #IO.puts ("Bitch "<>Integer.to_string(Map.get(state,:s)) <> " is spreading gossip that "<>gossip)
+        if(Map.get(state,:count)<Map.get(state,:maxCount)) do
+            sendGossip(Map.get(state,:current),gossip)
+            list=[:left,:right, :current]
+            pid=Map.get(state,Enum.random(list))
             if is_pid(pid) do
-                GenServer.cast(pid, {:setGossip, Map.get(state,:gossip_string)})
+                GenServer.cast(pid,{:receiveGossip,gossip})
             end
-            setGossip(Map.get(state,:current),Map.get(state,:gossip_string))
         else
-            printNode(Map.get(state,:current))
+            IO.puts ("Bitch "<>Integer.to_string(Map.get(state,:s)) <> " is spreading bored of the old news")
         end
         {:noreply, state}
     end
-
-    def handle_call({:getGossip}, _from, state) do
-        {:reply, Map.get(state, :gossip_string), state}
-    end
-
-    def handle_cast({:spreadGossip}, state) do
-        list=[:left, :right]
-        gossip=Map.get(state,:gossip_string)
-        setGossip( Map.get(state,Enum.random(list)),gossip)
-        {:noreply,state}
+    #Check Node for convergence
+    def handle_call(:isConverged, _from, state) do
+        {:reply,Map.get(state,:converged)}
     end
 
 end

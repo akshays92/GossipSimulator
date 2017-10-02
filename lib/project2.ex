@@ -29,23 +29,16 @@ defmodule Project2 do
 
   #to be called when Line topology is requested
   def line(numNodes, algorithm, left, nodeNo) when nodeNo<=numNodes do
-    """
-    IO.puts ("Line hai")
-    IO.puts (numNodes)
-    IO.puts (algorithm)
-    """
-    {:ok, current}=Project2.LineServer.start_link(nodeNo,algorithm)
+    {:ok, current}=Project2.LineServer.start_link(nodeNo)
     Project2.LineServer.setLeft(current,left)
     Project2.LineServer.setRight(left,current)
     Project2.LineServer.setCurrent(current)
-    #Project2.LineServer.printNode(left)
     line(numNodes, algorithm,current,nodeNo+1)
   end
 
   def line(numNodes, algorithm, left, nodeNo) when nodeNo>numNodes do
-    Project2.LineServer.setGossip(left, "Balbeer Pasha KO AIDS hai")
-    #Project2.LineServer.spreadGossip(left)
-    unlimitedLoop   
+    Project2.LineServer.receiveGossip(left, "Ashley is sleeping with Jon Doe")
+    unlimitedLoop()   
   end
 
   #to be called when 2dGrid topology is requested
