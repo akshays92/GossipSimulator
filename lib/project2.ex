@@ -17,9 +17,10 @@ defmodule Project2 do
     numNodes=String.to_integer(Enum.at(args,0))
     topology=(String.upcase(Enum.at(args,1)))
     algorithm=(String.upcase(Enum.at(args,2)))
+    nodeList=[]
 
     case topology do
-      "LINE" -> line(numNodes, algorithm, nil, 1)
+      "LINE" -> line(numNodes, algorithm, nil, 1, nodeList)
       "2DGRID" -> twoDGrid(numNodes, algorithm)
       "IMPERFECT2DGRID" -> imperfect2DGrid(numNodes, algorithm)
       "FULLNETWORK" -> fullNetwork(numNodes, algorithm)
@@ -28,17 +29,28 @@ defmodule Project2 do
   end
 
   #to be called when Line topology is requested
-  def line(numNodes, algorithm, left, nodeNo) when nodeNo<=numNodes do
+  def line(numNodes, algorithm, left, nodeNo, list) when nodeNo<=numNodes do
     {:ok, current}=Project2.LineServer.start_link(nodeNo)
+    list=[current]++list
     Project2.LineServer.setLeft(current,left)
     Project2.LineServer.setRight(left,current)
     Project2.LineServer.setCurrent(current)
-    line(numNodes, algorithm,current,nodeNo+1)
+    line(numNodes, algorithm,current,nodeNo+1, list)
   end
 
-  def line(numNodes, algorithm, left, nodeNo) when nodeNo>numNodes do
-    Project2.LineServer.receiveGossip(left, "Ashley is sleeping with Jon Doe")
-    unlimitedLoop()   
+  def line(numNodes, algorithm, left, nodeNo, list) when nodeNo>numNodes do
+    if String.equivalent?(algorithm,"GOSSIP") do
+      Project2.LineServer.sendGossip(Enum.random(list), "Ashley is sleeping with Jon Doe")
+      unlimitedLoop() 
+    else
+      if String.equivalent?(algorithm,"PUSH-SUM") do
+        Project2.LineServer.sendPushSum(Enum.random(list))  
+        unlimitedLoop() 
+      else
+        IO.puts("INCORRECT ALGORITHM")
+      end
+    end
+    #IO.inspect list  
   end
 
   #to be called when 2dGrid topology is requested
@@ -63,8 +75,8 @@ defmodule Project2 do
   end
 
   #to keep the main thread running
-  def unlimitedLoop do
-    unlimitedLoop
+  def unlimitedLoop() do
+    unlimitedLoop()
   end
 
 
