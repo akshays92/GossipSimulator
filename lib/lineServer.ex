@@ -11,7 +11,6 @@ defmodule Project2.LineServer do
         {:ok,init_data} 
     end
 
-
     #client callable functions
 
     #set pid for left node (received as arguement left) of this actor (received pid)

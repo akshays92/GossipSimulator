@@ -17,16 +17,22 @@ defmodule Project2 do
     numNodes=String.to_integer(Enum.at(args,0))
     topology=(String.upcase(Enum.at(args,1)))
     algorithm=(String.upcase(Enum.at(args,2)))
-
+  
     case topology do
       "LINE" -> line(numNodes, algorithm, nil, 1)
-      "2DGRID" -> twoDGrid(numNodes, algorithm)
+      "2DGRID" -> initialize(numNodes, algorithm, 1)
       "IMPERFECT2DGRID" -> imperfect2DGrid(numNodes, algorithm)
       "FULLNETWORK" -> fullNetwork(numNodes, algorithm)
     end
 
   end
 
+  def initialize(numNodes, algorithm, nodeNo) do
+    list = []
+    col = 0
+    row = 0
+    twoDGrid(numNodes, algorithm, nodeNo, list, col, row)
+  end
   #to be called when Line topology is requested
   def line(numNodes, algorithm, left, nodeNo) when nodeNo<=numNodes do
     {:ok, current}=Project2.LineServer.start_link(nodeNo)
@@ -42,10 +48,20 @@ defmodule Project2 do
   end
 
   #to be called when 2dGrid topology is requested
-  def twoDGrid(numNodes, algorithm) do
-    IO.puts ("2DGrid hai")
-    IO.puts (numNodes)
-    IO.puts (algorithm)
+  
+  def twoDGrid(numNodes, algorithm, nodeNo, list, col, row) when nodeNo<=numNodes do
+   
+    {:ok, current}=Project2.GridServer.start_link(nodeNo)
+    list = list ++ [current]
+
+    list2 = Project2.GridServer.setColRow(current, col, row, nodeNo,numNodes)
+    IO.inspect list2
+    twoDGrid(numNodes, algorithm, nodeNo+1, list, row, col)
+  end 
+
+  def twoDGrid(numNodes, algorithm, nodeNo, list, col, row) when nodeNo>numNodes do
+    IO.inspect list
+
   end
 
   #to be called when Imperfect2DGrid topology is requested
@@ -57,6 +73,7 @@ defmodule Project2 do
 
   #to be called when FullNetwork topology is requested
   def fullNetwork(numNodes, algorithm) do
+  
     IO.puts ("FullNetwork hai")
     IO.puts (numNodes)
     IO.puts (algorithm)
