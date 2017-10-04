@@ -40,7 +40,7 @@ defmodule Project2 do
 
   def line(numNodes, algorithm, left, nodeNo, list) when nodeNo>numNodes do
     if String.equivalent?(algorithm,"GOSSIP") do
-      Project2.LineServer.sendGossip(Enum.random(list), "Ashley is sleeping with Jon Doe")
+      Project2.LineServer.sendGossip(Enum.random(list), "Abra ka dabra")
       unlimitedLoop() 
     else
       if String.equivalent?(algorithm,"PUSH-SUM") do
