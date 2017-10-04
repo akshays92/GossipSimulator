@@ -13,29 +13,30 @@ defmodule Project2 do
   """
   def main(args) do
     
-    #getting the commandline arguements
+  #getting the commandline arguements
     numNodes=String.to_integer(Enum.at(args,0))
     topology=(String.upcase(Enum.at(args,1)))
     algorithm=(String.upcase(Enum.at(args,2)))
     nodeList=[]
-
+    firstNodeNo=1
     case topology do
-      "LINE" -> line(numNodes, algorithm, nil, 1, nodeList)
+      "LINE" -> line(numNodes, algorithm, nil,firstNodeNo, nodeList)
       "2DGRID" -> twoDGrid(numNodes, algorithm)
       "IMPERFECT2DGRID" -> imperfect2DGrid(numNodes, algorithm)
-      "FULLNETWORK" -> fullNetwork(numNodes, algorithm)
+      "FULLNETWORK" -> fullNetwork(numNodes, algorithm,nodeList,firstNodeNo)
     end
 
   end
 
+  #LINE ###############################################################################
   #to be called when Line topology is requested
   def line(numNodes, algorithm, left, nodeNo, list) when nodeNo<=numNodes do
     {:ok, current}=Project2.LineServer.start_link(nodeNo)
-    list=[current]++list
+    #list=[current]++list
     Project2.LineServer.setLeft(current,left)
     Project2.LineServer.setRight(left,current)
     Project2.LineServer.setCurrent(current)
-    line(numNodes, algorithm,current,nodeNo+1, list)
+    line(numNodes, algorithm,current,nodeNo+1, [current|list])
   end
 
   def line(numNodes, algorithm, left, nodeNo, list) when nodeNo>numNodes do
@@ -52,7 +53,32 @@ defmodule Project2 do
     end
     #IO.inspect list  
   end
+  #FULL NETWORK #######################################################################################
+  #to be called when FullNetwork topology is requested
+  def fullNetwork(numNodes, algorithm,list,nodeNo) when nodeNo<=numNodes do
+    {:ok, current}=Project2.FullNetworkServer.start_link(nodeNo)
+    Project2.FullNetworkServer.setCurrent(current)
+    fullNetwork(numNodes, algorithm,[current|list],nodeNo+1)
+  end
+  def fullNetwork(numNodes, algorithm,list,nodeNo) when nodeNo>numNodes do
+    for pid <- list do
+      Project2.FullNetworkServer.setMyAddressBook(pid,list)
+      #Project2.FullNetworkServer.printNode(pid)
+    end
+    if String.equivalent?(algorithm,"GOSSIP") do
+      Project2.FullNetworkServer.sendGossip(Enum.random(list), "Abra ka dabra")
+      unlimitedLoop() 
+    else
+      if String.equivalent?(algorithm,"PUSH-SUM") do
+        Project2.FullNetworkServer.sendPushSum(Enum.random(list))  
+        unlimitedLoop() 
+      else
+        IO.puts("INCORRECT ALGORITHM")
+      end
+    end
+  end
 
+  #####################################################################################################
   #to be called when 2dGrid topology is requested
   def twoDGrid(numNodes, algorithm) do
     IO.puts ("2DGrid hai")
@@ -63,13 +89,6 @@ defmodule Project2 do
   #to be called when Imperfect2DGrid topology is requested
   def imperfect2DGrid(numNodes, algorithm) do
     IO.puts ("Imperfect2DGrid hai")
-    IO.puts (numNodes)
-    IO.puts (algorithm)
-  end
-
-  #to be called when FullNetwork topology is requested
-  def fullNetwork(numNodes, algorithm) do
-    IO.puts ("FullNetwork hai")
     IO.puts (numNodes)
     IO.puts (algorithm)
   end
