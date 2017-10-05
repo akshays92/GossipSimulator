@@ -2,9 +2,8 @@ defmodule Project2.LineServer do
     use GenServer
 
     #Genserver DEF functions    
-    def start_link(s) do
-        #GenServer.start_link(__MODULE__,%{s: s, w: w, left: left, right: right}, name: :CoinServer
-        GenServer.start_link(__MODULE__,%{s: s, w: 1.0, left: nil, current: nil, right: nil, count: 0, gossip_string: "", maxCount: 100, pushSumConvergenceCount: 0})
+    def start_link(s,maxCount) do
+        GenServer.start_link(__MODULE__,%{s: s, w: 1.0, left: nil, current: nil, right: nil, count: 0, gossip_string: "", maxCount: maxCount, pushSumConvergenceCount: 0})
     end
 
     def init(init_data) do
@@ -131,7 +130,7 @@ defmodule Project2.LineServer do
     #PUSH-SUM sending function
     def handle_cast({:sendPushSum}, state) do
         :timer.sleep(1)
-        if(Map.get(state,:pushSumConvergenceCount) < 20) do
+        if(Map.get(state,:pushSumConvergenceCount) < Map.get(state,:maxCount)) do
             list=[:left,:right,:current]
             pid=Map.get(state,Enum.random(list))
             if is_pid(pid) do

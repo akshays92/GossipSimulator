@@ -19,27 +19,28 @@ defmodule Project2 do
     algorithm=(String.upcase(Enum.at(args,2)))
     nodeList=[]
     firstNodeNo=1
+    maxCount=10
     case topology do
-      "LINE" -> line(numNodes, algorithm, nil,firstNodeNo, nodeList)
+      "LINE" -> line(numNodes, algorithm, nil,firstNodeNo, nodeList, maxCount)
       "2DGRID" -> twoDGrid(numNodes, algorithm)
-      "IMPERFECT2DGRID" -> imperfect2DGrid(numNodes, algorithm)
-      "FULLNETWORK" -> fullNetwork(numNodes, algorithm,nodeList,firstNodeNo)
+      "IMPERFECT2DGRID" -> imperfect2DGrid(:math.ceil(:math.sqrt(numNodes))*:math.ceil(:math.sqrt(numNodes)), algorithm,1,maxCount,0,0,%{},nodeList)
+      "FULLNETWORK" -> fullNetwork(numNodes, algorithm,nodeList,firstNodeNo,maxCount)
     end
 
   end
 
   #LINE ###############################################################################
   #to be called when Line topology is requested
-  def line(numNodes, algorithm, left, nodeNo, list) when nodeNo<=numNodes do
-    {:ok, current}=Project2.LineServer.start_link(nodeNo)
+  def line(numNodes, algorithm, left, nodeNo, list,maxCount) when nodeNo<=numNodes do
+    {:ok, current}=Project2.LineServer.start_link(nodeNo,maxCount)
     #list=[current]++list
     Project2.LineServer.setLeft(current,left)
     Project2.LineServer.setRight(left,current)
     Project2.LineServer.setCurrent(current)
-    line(numNodes, algorithm,current,nodeNo+1, [current|list])
+    line(numNodes, algorithm,current,nodeNo+1, [current|list],maxCount)
   end
 
-  def line(numNodes, algorithm, left, nodeNo, list) when nodeNo>numNodes do
+  def line(numNodes, algorithm, left, nodeNo, list,maxCount) when nodeNo>numNodes do
     if String.equivalent?(algorithm,"GOSSIP") do
       Project2.LineServer.sendGossip(Enum.random(list), "Abra ka dabra")
       unlimitedLoop() 
@@ -55,15 +56,14 @@ defmodule Project2 do
   end
   #FULL NETWORK #######################################################################################
   #to be called when FullNetwork topology is requested
-  def fullNetwork(numNodes, algorithm,list,nodeNo) when nodeNo<=numNodes do
-    {:ok, current}=Project2.FullNetworkServer.start_link(nodeNo)
+  def fullNetwork(numNodes, algorithm,list,nodeNo,maxCount) when nodeNo<=numNodes do
+    {:ok, current}=Project2.FullNetworkServer.start_link(nodeNo,maxCount)
     Project2.FullNetworkServer.setCurrent(current)
-    fullNetwork(numNodes, algorithm,[current|list],nodeNo+1)
+    fullNetwork(numNodes, algorithm,[current|list],nodeNo+1,maxCount)
   end
-  def fullNetwork(numNodes, algorithm,list,nodeNo) when nodeNo>numNodes do
+  def fullNetwork(numNodes, algorithm,list,nodeNo,maxCount) when nodeNo>numNodes do
     for pid <- list do
       Project2.FullNetworkServer.setMyAddressBook(pid,list)
-      #Project2.FullNetworkServer.printNode(pid)
     end
     if String.equivalent?(algorithm,"GOSSIP") do
       Project2.FullNetworkServer.sendGossip(Enum.random(list), "Abra ka dabra")
@@ -85,14 +85,29 @@ defmodule Project2 do
     IO.puts (numNodes)
     IO.puts (algorithm)
   end
-
+  #IMPERFECT 2D GRID ###################################################################################
   #to be called when Imperfect2DGrid topology is requested
-  def imperfect2DGrid(numNodes, algorithm) do
-    IO.puts ("Imperfect2DGrid hai")
-    IO.puts (numNodes)
-    IO.puts (algorithm)
+  def imperfect2DGrid(numNodes, algorithm,nodeNo,maxCount,x,y,map,nodeList) when nodeNo<=numNodes do
+    {:ok, current}=Project2.Imperfect2DGrid.start_link(nodeNo,maxCount,x,y)
+    if rem(nodeNo,trunc(:math.sqrt(numNodes)))==0 do
+      new_x=0
+      new_y=y+1
+    else
+      new_x=x+1
+      new_y=y
+    end
+    map=Map.put(map,{x,y},current)
+    Project2.Imperfect2DGrid.setCurrent(current)
+    imperfect2DGrid(numNodes, algorithm,nodeNo+1,maxCount,new_x,new_y,map,[current|nodeList])
+  end
+  def imperfect2DGrid(numNodes, algorithm,nodeNo,maxCount,x,y,map,nodeList) when nodeNo>numNodes do
+    for pid <- nodeList do
+      Project2.Imperfect2DGrid.printNode(pid)
+    end
+    unlimitedLoop
   end
 
+  ######################################################################################################
   #to keep the main thread running
   def unlimitedLoop() do
     unlimitedLoop()

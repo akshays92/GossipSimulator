@@ -2,9 +2,9 @@ defmodule Project2.FullNetworkServer do
     use GenServer
 
     #Genserver DEF functions    
-    def start_link(s) do
+    def start_link(s,maxCount) do
         #GenServer.start_link(__MODULE__,%{s: s, w: w, left: left, right: right}, name: :CoinServer
-        GenServer.start_link(__MODULE__,%{s: s, w: 1.0, addressList: [],current: nil, count: 0, gossip_string: "", maxCount: 100, pushSumConvergenceCount: 0})
+        GenServer.start_link(__MODULE__,%{s: s, w: 1.0, addressList: [],current: nil, count: 0, gossip_string: "", maxCount: maxCount, pushSumConvergenceCount: 0})
     end
 
     def init(init_data) do
@@ -113,7 +113,7 @@ defmodule Project2.FullNetworkServer do
     #PUSH-SUM sending function
     def handle_cast({:sendPushSum}, state) do
         :timer.sleep(1)
-        if(Map.get(state,:pushSumConvergenceCount) < 3) do
+        if(Map.get(state,:pushSumConvergenceCount) < Map.get(state,:maxCount)) do
             pid=Enum.random(Map.get(state,:addressList))
             if is_pid(pid) do
                 apne_ka_half_s=Map.get(state,:s)/2;
