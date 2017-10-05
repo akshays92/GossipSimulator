@@ -22,8 +22,8 @@ defmodule Project2 do
     maxCount=10
     case topology do
       "LINE" -> line(numNodes, algorithm, nil,firstNodeNo, nodeList, maxCount)
-      "2DGRID" -> twoDGrid(numNodes, algorithm)
-      "IMPERFECT2DGRID" -> imperfect2DGrid(:math.ceil(:math.sqrt(numNodes))*:math.ceil(:math.sqrt(numNodes)), algorithm,1,maxCount,0,0,%{},nodeList)
+      "2DGRID" -> imperfect2DGrid(topology,:math.ceil(:math.sqrt(numNodes))*:math.ceil(:math.sqrt(numNodes)), algorithm,1,maxCount,0,0,%{},nodeList)
+      "IMPERFECT2DGRID" -> imperfect2DGrid(topology,:math.ceil(:math.sqrt(numNodes))*:math.ceil(:math.sqrt(numNodes)), algorithm,1,maxCount,0,0,%{},nodeList)
       "FULLNETWORK" -> fullNetwork(numNodes, algorithm,nodeList,firstNodeNo,maxCount)
     end
 
@@ -78,16 +78,9 @@ defmodule Project2 do
     end
   end
 
-  #####################################################################################################
-  #to be called when 2dGrid topology is requested
-  def twoDGrid(numNodes, algorithm) do
-    IO.puts ("2DGrid hai")
-    IO.puts (numNodes)
-    IO.puts (algorithm)
-  end
   #IMPERFECT 2D GRID ###################################################################################
   #to be called when Imperfect2DGrid topology is requested
-  def imperfect2DGrid(numNodes, algorithm,nodeNo,maxCount,x,y,map,nodeList) when nodeNo<=numNodes do
+  def imperfect2DGrid(topology,numNodes, algorithm,nodeNo,maxCount,x,y,map,nodeList) when nodeNo<=numNodes do
     {:ok, current}=Project2.Imperfect2DGrid.start_link(nodeNo,maxCount,x,y)
     if rem(nodeNo,trunc(:math.sqrt(numNodes)))==0 do
       new_x=0
@@ -98,13 +91,36 @@ defmodule Project2 do
     end
     map=Map.put(map,{x,y},current)
     Project2.Imperfect2DGrid.setCurrent(current)
-    imperfect2DGrid(numNodes, algorithm,nodeNo+1,maxCount,new_x,new_y,map,[current|nodeList])
+    imperfect2DGrid(topology,numNodes, algorithm,nodeNo+1,maxCount,new_x,new_y,map,[current|nodeList])
   end
-  def imperfect2DGrid(numNodes, algorithm,nodeNo,maxCount,x,y,map,nodeList) when nodeNo>numNodes do
+  def imperfect2DGrid(topology,numNodes, algorithm,nodeNo,maxCount,x,y,map,nodeList) when nodeNo>numNodes do
     for pid <- nodeList do
-      Project2.Imperfect2DGrid.printNode(pid)
+      #Project2.Imperfect2DGrid.printNode(pid)
+      xyMap=Project2.Imperfect2DGrid.getXY(pid)
+      new_x=Map.get(xyMap,:x)
+      new_y=Map.get(xyMap,:y)
+      addressBook=[]
+      addressBook=[Map.get(map,{new_x,new_y-1})|addressBook]
+      addressBook=[Map.get(map,{new_x,new_y+1})|addressBook]
+      addressBook=[Map.get(map,{new_x+1,new_y})|addressBook]
+      addressBook=[Map.get(map,{new_x-1,new_y})|addressBook]
+      if String.equivalent?(topology,"IMPERFECT2DGRID") do
+        addressBook=[Enum.random(nodeList)|addressBook]
+      end
+      Project2.Imperfect2DGrid.setMyAddressBook(pid,addressBook)
+      #Project2.Imperfect2DGrid.printNode(pid)
     end
-    unlimitedLoop
+    if String.equivalent?(algorithm,"GOSSIP") do
+      Project2.Imperfect2DGrid.sendGossip(Enum.random(nodeList), "Abra ka dabra")
+      unlimitedLoop() 
+    else
+      if String.equivalent?(algorithm,"PUSH-SUM") do
+        Project2.Imperfect2DGrid.sendPushSum(Enum.random(nodeList))  
+        unlimitedLoop() 
+      else
+        IO.puts("INCORRECT ALGORITHM")
+      end
+    end
   end
 
   ######################################################################################################
