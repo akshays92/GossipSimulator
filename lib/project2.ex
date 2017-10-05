@@ -43,11 +43,11 @@ defmodule Project2 do
   def line(numNodes, algorithm, left, nodeNo, list,maxCount) when nodeNo>numNodes do
     if String.equivalent?(algorithm,"GOSSIP") do
       Project2.LineServer.sendGossip(Enum.random(list), "Abra ka dabra")
-      unlimitedLoop() 
+      unlimitedLoop(list) 
     else
       if String.equivalent?(algorithm,"PUSH-SUM") do
         Project2.LineServer.sendPushSum(Enum.random(list))  
-        unlimitedLoop() 
+        unlimitedLoop(list) 
       else
         IO.puts("INCORRECT ALGORITHM")
       end
@@ -67,11 +67,11 @@ defmodule Project2 do
     end
     if String.equivalent?(algorithm,"GOSSIP") do
       Project2.FullNetworkServer.sendGossip(Enum.random(list), "Abra ka dabra")
-      unlimitedLoop() 
+      unlimitedLoop(list) 
     else
       if String.equivalent?(algorithm,"PUSH-SUM") do
         Project2.FullNetworkServer.sendPushSum(Enum.random(list))  
-        unlimitedLoop() 
+        unlimitedLoop(list) 
       else
         IO.puts("INCORRECT ALGORITHM")
       end
@@ -105,18 +105,18 @@ defmodule Project2 do
       addressBook=[Map.get(map,{new_x+1,new_y})|addressBook]
       addressBook=[Map.get(map,{new_x-1,new_y})|addressBook]
       if String.equivalent?(topology,"IMPERFECT2DGRID") do
-        addressBook=[Enum.random(nodeList)|addressBook]
+        addressBook=[Enum.random([nil|nodeList])|addressBook]
       end
       Project2.Imperfect2DGrid.setMyAddressBook(pid,addressBook)
       #Project2.Imperfect2DGrid.printNode(pid)
     end
     if String.equivalent?(algorithm,"GOSSIP") do
       Project2.Imperfect2DGrid.sendGossip(Enum.random(nodeList), "Abra ka dabra")
-      unlimitedLoop() 
+      unlimitedLoop(nodeList) 
     else
       if String.equivalent?(algorithm,"PUSH-SUM") do
         Project2.Imperfect2DGrid.sendPushSum(Enum.random(nodeList))  
-        unlimitedLoop() 
+        unlimitedLoop(nodeList) 
       else
         IO.puts("INCORRECT ALGORITHM")
       end
@@ -125,8 +125,9 @@ defmodule Project2 do
 
   ######################################################################################################
   #to keep the main thread running
-  def unlimitedLoop() do
-    unlimitedLoop()
+  def unlimitedLoop(list) do
+    #IO.puts Process.whereis(Enum.random(list))
+    unlimitedLoop([])
   end
 
 
