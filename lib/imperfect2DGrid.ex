@@ -53,7 +53,6 @@ defmodule Project2.Imperfect2DGrid do
     #Client side topology implementing functions
     def handle_cast({:printNode}, state) do
         IO.inspect state
-        #IO.puts " x:" <>Integer.to_string(Map.get(state,:x)) <> " y:" <>Integer.to_string(Map.get(state,:y))<>" :"<>List.to_string(:erlang.pid_to_list(Map.get(state,:current))) 
         {:noreply, state}
     end
     def handle_cast({:setCurrent, pid}, state) do
@@ -73,7 +72,7 @@ defmodule Project2.Imperfect2DGrid do
     def handle_cast({:receiveGossip, gossip}, state) do
         if(Map.get(state,:count)<1) do
             sendGossip(Map.get(state,:current),gossip)
-            IO.puts ("Node\t"<>Integer.to_string(Map.get(state,:s)) <> "\thas has started spreading the gossip")
+            IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>Integer.to_string(Map.get(state,:s)) <> "\thas has started spreading the gossip")
         end
         state=Map.put(state,:count,Map.get(state,:count)+1)
         state=Map.put(state,:gossip_string,gossip)            
@@ -88,7 +87,7 @@ defmodule Project2.Imperfect2DGrid do
                 receiveGossip(pid,gossip)
             end
         else
-            IO.puts ("Node\t"<>Integer.to_string(Map.get(state,:s)) <> "\thas converged with the gossip : "<>gossip)
+            IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>Integer.to_string(Map.get(state,:s)) <> "\thas converged with the gossip : "<>gossip)
         end
         {:noreply, state}
     end
@@ -109,7 +108,7 @@ defmodule Project2.Imperfect2DGrid do
 
         if(Map.get(state,:count)<1) do
             sendPushSum(Map.get(state,:current))
-            IO.puts "Node "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> "\thas started push sum")
+            IO.puts to_string(:os.system_time(:millisecond))<>"\tNode: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> "\thas started push sum")
             state=Map.put(state,:count,Map.get(state,:count)+1)            
         end
         {:noreply, state}
@@ -120,15 +119,17 @@ defmodule Project2.Imperfect2DGrid do
         if(Map.get(state,:pushSumConvergenceCount) < Map.get(state,:maxCount)) do
             pid=Enum.random(Map.get(state,:addressList))
             if is_pid(pid) do
-                apne_ka_half_s=Map.get(state,:s)/2;
-                apne_ka_half_w=Map.get(state,:w)/2;
-                state=Map.put(state,:s,apne_ka_half_s)
-                state=Map.put(state,:w,apne_ka_half_w)
-                receivePushSum(pid,apne_ka_half_s, apne_ka_half_w)
+                if !(pid==Map.get(state,:current)) do
+                    apne_ka_half_s=Map.get(state,:s)/2;
+                    apne_ka_half_w=Map.get(state,:w)/2;
+                    state=Map.put(state,:s,apne_ka_half_s)
+                    state=Map.put(state,:w,apne_ka_half_w)
+                    receivePushSum(pid,apne_ka_half_s, apne_ka_half_w)
+                end
             end
             sendPushSum(Map.get(state,:current))
         else
-            IO.puts (List.to_string(:erlang.pid_to_list(Map.get(state,:current)))<> "\t has converged to ") <> Float.to_string(Float.round(Map.get(state,:s)/Map.get(state,:w),10)) 
+            IO.puts to_string(:os.system_time(:millisecond))<>"\tNode: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current)))<> "\t has converged to ") <> Float.to_string(Float.round(Map.get(state,:s)/Map.get(state,:w),10)) 
 
         end
         {:noreply, state}

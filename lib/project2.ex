@@ -20,6 +20,7 @@ defmodule Project2 do
     nodeList=[]
     firstNodeNo=1
     maxCount=10
+    IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>firstNodeNo <> "\thas has started spreading the gossip") 
     case topology do
       "LINE" -> line(numNodes, algorithm, nil,firstNodeNo, nodeList, maxCount)
       "2DGRID" -> imperfect2DGrid(topology,:math.ceil(:math.sqrt(numNodes))*:math.ceil(:math.sqrt(numNodes)), algorithm,1,maxCount,0,0,%{},nodeList)

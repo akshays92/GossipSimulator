@@ -70,8 +70,6 @@ defmodule Project2.LineServer do
     
     def handle_cast({:printNode}, state) do
         IO.inspect state
-        #IO.puts Integer.to_string(Map.get(state,:s)) <> ":  " 
-        #IO.inspect Map.get(state,:current) 
         {:noreply, state}
     end
 
@@ -80,7 +78,7 @@ defmodule Project2.LineServer do
     def handle_cast({:receiveGossip, gossip}, state) do
         if(Map.get(state,:count)<1) do
             sendGossip(Map.get(state,:current),gossip)
-            IO.puts ("Node\t"<>Integer.to_string(Map.get(state,:s)) <> "\thas has started spreading the gossip")
+            IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>Integer.to_string(Map.get(state,:s)) <> "\thas has started spreading the gossip")
         end
         state=Map.put(state,:count,Map.get(state,:count)+1)
         state=Map.put(state,:gossip_string,gossip)            
@@ -88,16 +86,15 @@ defmodule Project2.LineServer do
     end
     #Gossip sending function
     def handle_cast({:sendGossip, gossip}, state) do
-        #IO.puts ("Bitch "<>Integer.to_string(Map.get(state,:s)) <> " is spreading gossip that "<>gossip)
         if(Map.get(state,:count)<Map.get(state,:maxCount)) do
             sendGossip(Map.get(state,:current),gossip)
-            list=[:left,:right, :current]
+            list=[:left,:right]
             pid=Map.get(state,Enum.random(list))
             if is_pid(pid) do
                 receiveGossip(pid,gossip)
             end
         else
-            IO.puts ("Node\t"<>Integer.to_string(Map.get(state,:s)) <> "\thas converged with the gossip : "<>gossip)
+            IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>Integer.to_string(Map.get(state,:s)) <> "\thas converged with the gossip : "<>gossip)
         end
         {:noreply, state}
     end
@@ -112,17 +109,13 @@ defmodule Project2.LineServer do
 
         if (naya_ratio==purana_ratio) do
             state=Map.put(state,:pushSumConvergenceCount,Map.get(state,:pushSumConvergenceCount)+1)
-            #IO.puts List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> " has set cause naya is purana"
-            #IO.puts Float.to_string(naya_ratio) <>"  "<> Float.to_string(purana_ratio)  
         else
             state=Map.put(state,:pushSumConvergenceCount,0)
-            #IO.puts List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> " has reset cause naya is not purana"
-            #IO.puts Float.to_string(naya_ratio) <>"  "<> Float.to_string(purana_ratio)  
         end
 
         if(Map.get(state,:count)<1) do
             sendPushSum(Map.get(state,:current))
-            IO.puts "Node "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> "\thas started push sum")
+            IO.puts to_string(:os.system_time(:millisecond))<>"\tNode: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> "\thas started push sum")
             state=Map.put(state,:count,Map.get(state,:count)+1)            
         end
         {:noreply, state}
@@ -131,7 +124,7 @@ defmodule Project2.LineServer do
     def handle_cast({:sendPushSum}, state) do
         :timer.sleep(1)
         if(Map.get(state,:pushSumConvergenceCount) < Map.get(state,:maxCount)) do
-            list=[:left,:right,:current]
+            list=[:left,:right]
             pid=Map.get(state,Enum.random(list))
             if is_pid(pid) do
                 apne_ka_half_s=Map.get(state,:s)/2;
@@ -142,7 +135,7 @@ defmodule Project2.LineServer do
             end
             sendPushSum(Map.get(state,:current))
         else
-            IO.puts (List.to_string(:erlang.pid_to_list(Map.get(state,:current)))<> "\t has converged to ") <> Float.to_string(Float.round(Map.get(state,:s)/Map.get(state,:w),10)) 
+            IO.puts to_string(:os.system_time(:millisecond))<>"\tNode: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current)))<> "\t has converged to ") <> Float.to_string(Float.round(Map.get(state,:s)/Map.get(state,:w),10)) 
 
         end
         {:noreply, state}
