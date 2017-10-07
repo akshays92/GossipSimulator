@@ -2,8 +2,8 @@ defmodule Project2.LineServer do
     use GenServer
 
     #Genserver DEF functions    
-    def start_link(s,maxCount) do
-        GenServer.start_link(__MODULE__,%{s: s, w: 1.0, left: nil, current: nil, right: nil, count: 0, gossip_string: "", maxCount: maxCount, pushSumConvergenceCount: 0})
+    def start_link(s,maxCount,start_time) do
+        GenServer.start_link(__MODULE__,%{s: s, w: 1.0, left: nil, current: nil, right: nil, count: 0, gossip_string: "", maxCount: maxCount, pushSumConvergenceCount: 0, start_time: start_time})
     end
 
     def init(init_data) do
@@ -78,7 +78,7 @@ defmodule Project2.LineServer do
     def handle_cast({:receiveGossip, gossip}, state) do
         if(Map.get(state,:count)<1) do
             sendGossip(Map.get(state,:current),gossip)
-            IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>Integer.to_string(Map.get(state,:s)) <> "\thas has started spreading the gossip")
+            IO.puts ("Node: "<>List.to_string(:erlang.pid_to_list Map.get(state,:current)) <> "\t has started spreading the gossip")
         end
         state=Map.put(state,:count,Map.get(state,:count)+1)
         state=Map.put(state,:gossip_string,gossip)            
@@ -86,6 +86,7 @@ defmodule Project2.LineServer do
     end
     #Gossip sending function
     def handle_cast({:sendGossip, gossip}, state) do
+        :timer.sleep(1)
         if(Map.get(state,:count)<Map.get(state,:maxCount)) do
             sendGossip(Map.get(state,:current),gossip)
             list=[:left,:right]
@@ -94,7 +95,8 @@ defmodule Project2.LineServer do
                 receiveGossip(pid,gossip)
             end
         else
-            IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>Integer.to_string(Map.get(state,:s)) <> "\thas converged with the gossip : "<>gossip)
+            duration = String.to_integer(to_string(:os.system_time(:millisecond))) - String.to_integer(Map.get(state, :start_time))
+            IO.puts ("Node: "<>List.to_string(:erlang.pid_to_list Map.get(state,:current)) <> "\thas converged with the gossip : "<>gossip <> " after " <> Integer.to_string(duration) <> " ms")
         end
         {:noreply, state}
     end
@@ -115,7 +117,7 @@ defmodule Project2.LineServer do
 
         if(Map.get(state,:count)<1) do
             sendPushSum(Map.get(state,:current))
-            IO.puts to_string(:os.system_time(:millisecond))<>"\tNode: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> "\thas started push sum")
+            IO.puts "Node: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> "\thas started push sum")
             state=Map.put(state,:count,Map.get(state,:count)+1)            
         end
         {:noreply, state}
@@ -135,7 +137,8 @@ defmodule Project2.LineServer do
             end
             sendPushSum(Map.get(state,:current))
         else
-            IO.puts to_string(:os.system_time(:millisecond))<>"\tNode: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current)))<> "\t has converged to ") <> Float.to_string(Float.round(Map.get(state,:s)/Map.get(state,:w),10)) 
+            duration = String.to_integer(to_string(:os.system_time(:millisecond))) - String.to_integer(Map.get(state, :start_time))            
+            IO.puts "Node: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))))<> "\t has converged to " <> Float.to_string(Float.round(Map.get(state,:s)/Map.get(state,:w),10)) <> " after " <> Integer.to_string(duration) <>" ms" 
 
         end
         {:noreply, state}
