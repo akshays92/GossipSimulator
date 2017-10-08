@@ -51,7 +51,12 @@ defmodule Project2.LineServer do
     #printing this node
     def printNode(pid) do
         GenServer.cast(pid, {:printNode})
-    end    
+    end
+    
+    #setting start time
+    def setStartTime(pid, starttime) do
+        GenServer.cast(pid, {:setStartTime, starttime})
+    end
     
     #callback functions / p2p server side functions
     #topology implementing functions
@@ -70,6 +75,11 @@ defmodule Project2.LineServer do
     
     def handle_cast({:printNode}, state) do
         IO.inspect state
+        {:noreply, state}
+    end
+
+    def handle_cast({:setStartTime, starttime}, state) do
+        state=Map.put(state,:start_time,starttime)
         {:noreply, state}
     end
 

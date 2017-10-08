@@ -38,6 +38,11 @@ defmodule Project2.Imperfect2DGrid do
         GenServer.cast(pid, {:receiveGossip, gossip})
     end
 
+    #setting start time
+    def setStartTime(pid, starttime) do
+        GenServer.cast(pid, {:setStartTime, starttime})
+    end
+
     #PUSH-SUM PROTOCOL
     #spreading PUSH-SUM for the target pid
     def sendPushSum(pid) do
@@ -64,6 +69,10 @@ defmodule Project2.Imperfect2DGrid do
     end
     def handle_call({:getXY},_form,state) do
         {:reply,%{x: Map.get(state,:x),y: Map.get(state,:y)},state}
+    end
+    def handle_cast({:setStartTime, starttime}, state) do
+        state=Map.put(state,:start_time,starttime)
+        {:noreply, state}
     end
 
     #GOSSIP PROTOCIOL SERVER FUNCTIONS

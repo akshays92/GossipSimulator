@@ -13,6 +13,11 @@ defmodule Project2.FullNetworkServer do
 
     #client callable functions
 
+    #setting start time
+    def setStartTime(pid, starttime) do
+        GenServer.cast(pid, {:setStartTime, starttime})
+    end
+
     #Topology functions
     #set pid for current node (received as arguement pid) of this actor (received pid). Makes the node self-sentinent LOL
     def setCurrent(pid) do
@@ -61,6 +66,10 @@ defmodule Project2.FullNetworkServer do
 
     def handle_cast({:setCurrent, pid}, state) do
         state=Map.put(state,:current,pid)
+        {:noreply, state}
+    end
+    def handle_cast({:setStartTime, starttime}, state) do
+        state=Map.put(state,:start_time,starttime)
         {:noreply, state}
     end
 

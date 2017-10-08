@@ -47,6 +47,9 @@ defmodule Project2 do
       killSomeRandomProcesses(failureCount,list)
       IO.puts to_string(failureCount)<>" nodes killed after creating topology"
     end
+    for pid <- list do
+      Project2.FullNetworkServer.setStartTime(pid,start_time)
+    end
     if String.equivalent?(algorithm,"GOSSIP") do
       pehla=Enum.random(list)
       IO.puts "Node: "<>(List.to_string(:erlang.pid_to_list(pehla)) <> "\thas started spreading the gossip")
@@ -74,6 +77,10 @@ defmodule Project2 do
   def fullNetwork(numNodes, algorithm,list,nodeNo,maxCount,failureCount,start_time) when nodeNo>numNodes do
     for pid <- list do
       Project2.FullNetworkServer.setMyAddressBook(pid,list)
+    end
+    start_time = to_string(:os.system_time(:millisecond))
+    for pid <- list do
+      Project2.FullNetworkServer.setStartTime(pid,start_time)
     end
     if(failureCount>0) do
       killSomeRandomProcesses(failureCount,list)
@@ -127,6 +134,10 @@ defmodule Project2 do
       end
       Project2.Imperfect2DGrid.setMyAddressBook(pid,addressBook)
       #Project2.Imperfect2DGrid.printNode(pid)
+    end
+    start_time = to_string(:os.system_time(:millisecond))
+    for pid <- nodeList do
+      Project2.FullNetworkServer.setStartTime(pid,start_time)
     end
     if(failureCount>0) do
       killSomeRandomProcesses(failureCount,nodeList)
