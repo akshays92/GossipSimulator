@@ -1,9 +1,8 @@
 defmodule Project2.Imperfect2DGrid do
     use GenServer
     #Genserver DEF functions    
-    def start_link(s, maxCount,x,y) do
-        GenServer.start_link(__MODULE__,%{s: s, w: 1.0, current: nil,count: 0, gossip_string: "", addressList: [],
-                                            maxCount: maxCount, pushSumConvergenceCount: 0,x: x, y: y})
+    def start_link(s, maxCount,x,y,start_time) do
+        GenServer.start_link(__MODULE__,%{s: s, w: 1.0, current: nil,count: 0, gossip_string: "", addressList: [], maxCount: maxCount, pushSumConvergenceCount: 0,x: x, y: y, start_time: start_time})
     end
 
     def init(init_data) do
@@ -39,6 +38,11 @@ defmodule Project2.Imperfect2DGrid do
         GenServer.cast(pid, {:receiveGossip, gossip})
     end
 
+    #setting start time
+    def setStartTime(pid, starttime) do
+        GenServer.cast(pid, {:setStartTime, starttime})
+    end
+
     #PUSH-SUM PROTOCOL
     #spreading PUSH-SUM for the target pid
     def sendPushSum(pid) do
@@ -66,13 +70,17 @@ defmodule Project2.Imperfect2DGrid do
     def handle_call({:getXY},_form,state) do
         {:reply,%{x: Map.get(state,:x),y: Map.get(state,:y)},state}
     end
+    def handle_cast({:setStartTime, starttime}, state) do
+        state=Map.put(state,:start_time,starttime)
+        {:noreply, state}
+    end
 
     #GOSSIP PROTOCIOL SERVER FUNCTIONS
     #Gossip receiving function
     def handle_cast({:receiveGossip, gossip}, state) do
         if(Map.get(state,:count)<1) do
             sendGossip(Map.get(state,:current),gossip)
-            IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>Integer.to_string(Map.get(state,:s)) <> "\thas has started spreading the gossip")
+            IO.puts ("Node: "<>List.to_string(:erlang.pid_to_list Map.get(state,:current)) <> "\t has started spreading the gossip")
         end
         state=Map.put(state,:count,Map.get(state,:count)+1)
         state=Map.put(state,:gossip_string,gossip)            
@@ -80,6 +88,7 @@ defmodule Project2.Imperfect2DGrid do
     end
     #Gossip sending function
     def handle_cast({:sendGossip, gossip}, state) do
+        :timer.sleep(1)
         if(Map.get(state,:count)<Map.get(state,:maxCount)) do
             sendGossip(Map.get(state,:current),gossip)
             pid=Enum.random(Map.get(state,:addressList))
@@ -87,7 +96,8 @@ defmodule Project2.Imperfect2DGrid do
                 receiveGossip(pid,gossip)
             end
         else
-            IO.puts to_string(:os.system_time(:millisecond))<>("\tNode: "<>Integer.to_string(Map.get(state,:s)) <> "\thas converged with the gossip : "<>gossip)
+            duration = String.to_integer(to_string(:os.system_time(:millisecond))) - String.to_integer(Map.get(state, :start_time))            
+            IO.puts ("Node: "<>List.to_string(:erlang.pid_to_list Map.get(state,:current)) <> "\thas converged with the gossip : "<>gossip <> " after " <> Integer.to_string(duration) <> " ms")
         end
         {:noreply, state}
     end
@@ -108,7 +118,7 @@ defmodule Project2.Imperfect2DGrid do
 
         if(Map.get(state,:count)<1) do
             sendPushSum(Map.get(state,:current))
-            IO.puts to_string(:os.system_time(:millisecond))<>"\tNode: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> "\thas started push sum")
+            IO.puts "Node: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))) <> "\thas started push sum")
             state=Map.put(state,:count,Map.get(state,:count)+1)            
         end
         {:noreply, state}
@@ -129,7 +139,8 @@ defmodule Project2.Imperfect2DGrid do
             end
             sendPushSum(Map.get(state,:current))
         else
-            IO.puts to_string(:os.system_time(:millisecond))<>"\tNode: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current)))<> "\t has converged to ") <> Float.to_string(Float.round(Map.get(state,:s)/Map.get(state,:w),10)) 
+            duration = String.to_integer(to_string(:os.system_time(:millisecond))) - String.to_integer(Map.get(state, :start_time))            
+            IO.puts "Node: "<>(List.to_string(:erlang.pid_to_list(Map.get(state,:current))))<> "\t has converged to " <> Float.to_string(Float.round(Map.get(state,:s)/Map.get(state,:w),10)) <> " after " <> Integer.to_string(duration) <> " ms"
 
         end
         {:noreply, state}
