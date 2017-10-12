@@ -18,6 +18,7 @@ defmodule Project2 do
     topology=(String.upcase(Enum.at(args,1)))
     algorithm=(String.upcase(Enum.at(args,2)))
     failureCount=(String.to_integer(Enum.at(args,3)))
+    #failureCount=0
     nodeList=[]
     firstNodeNo=1
     maxCount=10
